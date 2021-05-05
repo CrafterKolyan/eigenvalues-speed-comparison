@@ -1,0 +1,1 @@
+textify.exe --pdf --clean report.tex

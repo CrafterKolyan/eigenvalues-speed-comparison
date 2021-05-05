@@ -1,0 +1,270 @@
+\documentclass[12pt, fleqn]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage{amssymb, amsmath, mathrsfs, amsthm}
+\usepackage[russian]{babel}
+\usepackage{graphicx}
+\usepackage[footnotesize]{caption2}
+\usepackage{indentfirst}
+\usepackage[hidelinks]{hyperref}
+\usepackage{multirow}
+%\usepackage[ruled,section]{algorithm}
+%\usepackage[noend]{algorithmic}
+%\usepackage[all]{xy}
+
+% Параметры страницы
+\textheight=24cm
+\textwidth=16cm
+\oddsidemargin=5mm
+\evensidemargin=-5mm
+\marginparwidth=36pt
+\topmargin=-1cm
+\footnotesep=3ex
+%\flushbottom
+\raggedbottom
+\tolerance 3000
+% подавить эффект "висячих стpок"
+\clubpenalty=10000
+\widowpenalty=10000
+\renewcommand{\baselinestretch}{1.1}
+\renewcommand{\baselinestretch}{1.5} %для печати с большим интервалом
+
+% Дополнительные команды для личных обозначений
+\newcommand{\expectation}{\mathop{\mathbb{E}}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\loss}{\mathop{\mathcal{L}}}
+\newcommand{\mse}{\mathop{MSE}}
+\newcommand{\scalarproduct}[1]{\langle #1 \rangle}
+
+\newcommand{\predictionfunction}{\hat{f}}
+\newcommand{\ensemblefunction}{a}
+\newcommand{\optimizationmethodfunction}{\tilde{f}}
+\newcommand{\distinguishparameter}{\alpha}
+\newcommand{\objects}{X}
+\newcommand{\results}{Y}
+\newcommand{\predictedobjects}{\widehat{\objects}}
+
+\newcommand{\numberobjects}{N}
+\newcommand{\numberpredictionfunctions}{M}
+
+\newcommand{\for}[3]{\sum\limits_{#1 = #2}^{#3}}  % Usage: \for{index}{begin}{end}
+\newcommand{\forn}[2]{\for{#1}{1}{#2}}  % Usage: \forn{index}{end}
+
+\newcommand{\many}[3]{#1 1 #2, #1 2 #2, \dots, #1 #3 #2}  % Usage: \many{prefix}{suffix}{end}
+
+\newcommand{\reference}[1]{(\hyperref[#1]{\ref{#1}})}
+
+\newcommand{\ensemblefunctionfull}{\ensemblefunction(\many{\predictionfunction_}{(x)}{\numberpredictionfunctions})}
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+    Московский государственный университет имени М. В. Ломоносова
+
+    \bigskip
+    \includegraphics[width=50mm]{msu.eps}
+
+    \bigskip
+    Факультет Вычислительной Математики и Кибернетики\\
+    Кафедра Математических Методов Прогнозирования\\[10mm]
+
+    \textsf{\large\bfseries
+        <<Сравнение скорости вычисления собственных значений положительно определённых матриц>>
+    }\\[20mm]
+
+    \begin{flushright}
+        \parbox{0.5\textwidth}{
+            Выполнил:\\
+            студент 1 курса магистратуры 517 группы\\
+            \emph{Королев Николай Сергеевич}\\[5mm]
+            Преподаватель:\\
+            канд. техн. наук, доцент\\
+            \emph{Русол Андрей Владимирович}
+        }
+    \end{flushright}
+
+    \vspace{\fill}
+    Москва, 2021
+\end{center}
+\end{titlepage}
+
+\newpage
+\renewcommand{\contentsname}{Содержание}
+\tableofcontents
+
+\newpage
+\begin{abstract}
+    В данной работе рассматривается новый метод повышения качества обучения моделей, а также увеличения их обобщающей способности, основанный на ансамбле промежуточных решений. В ходе вычислительного эксперимента, была показана возможная применимость данного метода для улучшения качества нейронных сетей, решающих задачу классификации на реальных данных.
+\end{abstract}
+
+\newpage
+\section{Введение}
+
+В настоящее время придумано огромное количество алгоритмов машинного обучения. Данные алгоритмы решают различные задачи и применяются во многих сферах человеческой деятельности. Одной из наиболее распространённых способов применения машинного обучения является решение задачи предсказания, в которой необходимо предсказать некоторый параметр (отклик) по ряду других параметров. В таких задачах крайне важна обобщающая способность используемого алгоритма обучения. В случае недостаточной обобщающей способности, итоговая модель не сможет достаточно точно предсказывать необходимый параметр (отклик), поэтому очень остро стоит проблема повышения обобщающей способности модели.
+
+В данной работе рассматривается новый метод повышения качества обучения моделей, а также увеличения их обобщающей способности, основанный на ансамбле промежуточных решений. Кроме того, проводятся вычислительные эксперименты, показывающие эффективность работы данного метода в задаче классификации на данных систолического артериального давления.
+
+\subsection{Постановка задачи}
+
+$\many{x_}{}{\numberobjects}$~--~точки в некотором векторном пространстве; $\many{y_}{}{\numberobjects}$~--~ значения, соответствующие этим точкам. При этом $y_i = y(x_i) = f(x_i) + \varepsilon$, где $\varepsilon$~--~случайная величина с нулевым математическим ожиданием и дисперсией $\sigma^2$. Пусть также задана функция $\predictionfunction_1(x)$, которая приближает функцию $f(x)$. Стоит задача нахождения $\numberpredictionfunctions - 1$ функции $\predictionfunction_2(x), \predictionfunction_3(x), \dots, \predictionfunction_\numberpredictionfunctions(x)$, а также функции-ансамбля $\predictionfunction(x) = \ensemblefunctionfull$, приближающей функцию $f(x)$ лучше чем любая из функций $\predictionfunction_i(x), \; i = \many{}{}{\numberpredictionfunctions}$.
+
+\subsection{Теоретическая часть}
+Из~\cite{BiasVarianceDecompositionZeroOneSquaredLoss} известно разложение математического ожидания квадратичной ошибки на смещение и дисперсию:
+\begin{equation*}
+\expectation \left[ \left( \predictionfunction(x) - y \right)^2 \right] =
+\left(
+	\expectation \predictionfunction(x) - f(x)
+\right)^2  +
+\left(
+	\expectation \predictionfunction^2(x) - \left(\expectation \predictionfunction(x)\right)^2
+\right) + \sigma^2
+\end{equation*}
+
+Для уменьшения как смещения, так и дисперсии $\predictionfunction(x)$ используются ансамбли:
+\begin{equation*}
+\predictionfunction(x) = \ensemblefunctionfull
+\end{equation*}
+
+В~\cite{OptimalConvexCorrectingProcedures} было доказано, что в случае, когда функция $\ensemblefunctionfull$ является выпуклой комбинацией своих аргументов:
+\begin{equation*}
+\ensemblefunctionfull = 
+\forn{i}{\numberpredictionfunctions} c_i \predictionfunction_i(x),
+\end{equation*}
+\begin{equation*}
+\forn{i}{\numberpredictionfunctions} c_i = 1; \quad c_i \geq 0, \quad i = \many{}{}{\numberpredictionfunctions};
+\end{equation*}
+выполнено
+\begin{equation}\label{OptimizedDifferenceDecomposition}
+\expectation \left[\left( \predictionfunction(x) - y \right)^2 \right] =
+\forn{i}{\numberpredictionfunctions} c_i
+\expectation \left[ \left(
+	\predictionfunction_i(x) - y
+\right)^2 \right] 
+- \dfrac{1}{2}
+\forn{i}{\numberpredictionfunctions} \forn{j}{\numberpredictionfunctions} c_i c_j
+\expectation \left[ \left(
+	\predictionfunction_i(x) - \predictionfunction_j(x)
+\right)^2 \right]
+\end{equation}
+
+Соответственно, для уменьшения среднеквадратичной ошибки необходимо уменьшать среднеквадратичную ошибку каждого предиктора $\predictionfunction_i(x)$, а также увеличивать расхождение между прогнозами различных предикторов.
+
+\subsection{Существующие методы}
+
+В большинстве случаев функция-ансамбль $\predictionfunction(x) = \ensemblefunctionfull$ является линейной комбинацией функций предикторов $\many{\predictionfunction_}{(x)}{\numberpredictionfunctions}$. Коэффициенты линейной комбинации ищутся при помощи методов регрессионного анализа:
+\begin{itemize}
+\item гребневая регрессия~\cite{Ridge}
+\item метод Лассо~\cite{Lasso}
+\item эластичная сеть~\cite{ElasticNet}
+\item регрессионная модель, отбирающая признаки, наиболее коррелирующие с откликом~\cite{ConvexCombinationsBestCorrelatedWithResponse}
+\end{itemize}
+
+Функции $\many{\predictionfunction_}{(x)}{\numberpredictionfunctions}$ в таких случаях обычно независимы друг от друга и получены методом оптимизации некоторого функционала.
+
+\section{Ансамбль промежуточных решений}
+
+Пусть:\\
+$\objects$ - матрица из $\numberobjects$ строк, $i$-ая строка равна $x_i$;\\
+$\results$ - вектор из $\numberobjects$ элементов, $i$-ый элемент равен $y_i$.
+
+Пусть $\predictionfunction_1(x)$ представима в виде функции с параметрами $\optimizationmethodfunction(x, \theta)$ и была получена некоторым методом оптимизации функционала среднеквадратичной ошибки
+$\mse(\predictionfunction_1(x), \objects, \results) = \dfrac{1}{\numberobjects}\forn{i}{\numberobjects} (\predictionfunction_1(x_i) - y_i)^2$:
+$$\predictionfunction_1(x) = \optimizationmethodfunction(x, \theta_1)$$
+
+В качестве функции $\optimizationmethodfunction(x, \theta)$ может выступать нейронная сеть, тогда параметрами $\theta$ будут являться веса нейронной сети.
+
+\subsection{Поиск промежуточных решений}
+
+Будем искать функции $\predictionfunction_2(x), \predictionfunction_3(x), \dots, \predictionfunction_\numberpredictionfunctions(x)$ в виде $\optimizationmethodfunction(x, \theta)$, минимизируя следующий функционал:
+\begin{equation}\label{equation:lossfunction}
+\loss(\predictionfunction_k(x), \objects, \results) = \mse(\optimizationmethodfunction(x, \theta_k), \objects, \results) -
+\dfrac{\distinguishparameter}{k - 1}
+\forn{i}{k - 1}\norm{\theta_k - \theta_i}^2, \quad k = 2, 3, \dots, \numberpredictionfunctions,
+\end{equation}
+где $\distinguishparameter \geq 0$ является гиперпараметром.
+
+Данный функционал поощряет функции $\predictionfunction_i(x)$ иметь различные параметры $\theta_i$. Таким образом, мы пытаемся добиться максимального расхождения значений функций. Впоследствии это уменьшит среднеквадратичную ошибку функции-ансамбля $\predictionfunction(x)$, что следует из уравнения \reference{OptimizedDifferenceDecomposition}.
+
+Стоит отметить, что при больших $k$ вычисление данного функционала может быть вычислительно затратным, так как $\forn{i}{k - 1}\norm{\theta_k - \theta_i}^2$ в общем случае требует $O(k)$ времени. Если все $\theta_i$ лежат в некотором евклидовом пространстве, данное выражение переписывается в виде:
+$$
+\forn{i}{k - 1}\norm{\theta_k - \theta_i}^2 = (k - 1)\norm{\theta_k}^2 - 2\scalarproduct{\theta_k, \forn{i}{k - 1} \theta_i} + \forn{i}{k - 1}\norm{\theta_i}^2.
+$$
+
+Значения выражений $\forn{i}{k - 1} \theta_i$ и $\forn{i}{k - 1}\norm{\theta_i}^2$ можно поддерживать в течении всего процесса поиска функции $\predictionfunction_k(x)$ и пересчитывать за $O(1)$ времени при переходе к поиску~$\predictionfunction_{k+1}(x)$.
+
+\subsection{Поиск функции-ансамбля}
+
+Составим матрицу $\predictedobjects$ размера $\numberobjects \times \numberpredictionfunctions$, где $\predictedobjects_{i, j} = \predictionfunction_j(x_i)$.
+Для поиска функции-ансамбля $\predictionfunction(x) = \ensemblefunctionfull$ необходимо найти функцию $\ensemblefunction(\many{\hat{x}_}{}{\numberpredictionfunctions}) = \ensemblefunction(\hat{x})$, которую будем искать
+из минимизации функционала $\mse(\ensemblefunction(\hat{x}), \predictedobjects, \results)$.
+
+\section{Вычислительные эксперименты}
+
+Для проверки качества работы представленного метода решим задачу классификации на трёх выборках данных систолического артериального давления. Данные заранее разбиты на обучающую и тестовую выборки. Размеры каждой из выборок представлены в таблице \ref{tabular:datasize}. Все параметры являются численными.
+
+\begin{table}[h!]
+	\begin{center}
+		\begin{tabular}{|c|c|c|c|}
+			\hline
+			\multirow{2}{*}{Номер выборки} & \multicolumn{2}{c|}{Количество объектов} & \multirow{2}{*}{Количество параметров} \\
+			\cline{2-3}
+			& Обучающая выборка & Тестовая выборка & \\
+			\hline
+			1 & 718 & 458 & 114 \\
+			\hline
+			2 & 373 & 221 & 114 \\
+			\hline
+			3 & 832 & 495 & 114 \\
+			\hline
+		\end{tabular}
+	\end{center}
+	
+	\caption{Размеры выборок данных}
+	\label{tabular:datasize}
+\end{table}
+
+В качестве функции $\optimizationmethodfunction(x, \theta)$ используется двухслойная нейронная сеть с сигмоидальной функцией активации, которая оптимизируется методом Adam. В качестве функции-ансамбля $\ensemblefunction(\hat{x})$ используется точно такая же нейронная сеть, с другим количеством входных параметров и другой размерностью скрытого слоя.
+
+В ходе эксперимента изначально обучается одна нейронная сеть $\predictionfunction_1(x) = \optimizationmethodfunction(x, \theta_1)$ и оценивается качество её работы. После этого обучается $\numberpredictionfunctions$ новых нейронных сетей $\predictionfunction_i(x) = \optimizationmethodfunction_i(x, \theta_i)$, а также ищется оптимальная функция-ансамбль $\ensemblefunction(\hat{x})$ в виде двухслойной нейронной сети. Затем оценивается качество работы ансамбля промежуточных решений $\predictionfunction(x) = \ensemblefunctionfull$.
+
+\subsection{Результаты эксперимента}
+
+Наилучших результатов удалось достичь для $\numberpredictionfunctions = 4$. Также при построении ансамбля промежуточных решений был замечен эффект улучшения качества предсказания отдельных нейронных сетей, обученных после первой нейронной сети $\predictionfunction_1(x)$.
+Итоговые результаты эксперимента представлены в таблице \ref{tabular:results}.
+
+\begin{table}[h!]
+	\begin{center}
+		\begin{tabular}{|c|c|c|}
+			\hline
+			Номер выборки & Одна нейронная сеть & Ансамбль промежуточных решений \\
+			\hline
+			1 & 0.78 & 0.86 \\
+			\hline
+			2 & 0.79 & 0.83 \\
+			\hline
+			3 & 0.78 & 0.81 \\
+			\hline
+		\end{tabular}
+	\end{center}
+	
+	\caption{Результаты экспериментов (ROC AUC на тестовой выборке)}
+	\label{tabular:results}
+\end{table}
+
+\subsection{Анализ полученных результатов}
+
+Полученные результаты показывают, что ансамбль промежуточных решений, построенных с использованием функции потерь \reference{equation:lossfunction}, способен достаточно серьёзно увеличивать обобщающую способность предсказания в сравнении с отдельными нейронными сетями.
+Также замечен эффект улучшения качества отдельных нейронных сетей, построенных данным методом. Попробуем объяснить данный эффект. Предполагается, что он вызван тем, что в случае нахождения недостаточно минимизирующего параметра $\theta_1$ для нейронной сети $\predictionfunction_1(x, \theta_1)$, последующие нейронные сети находят параметры $\theta_i$ на отдалении от $\theta_1$. Следовательно, $\theta_i$ не находится в области $\theta_1$, в которой функция потерь не достигает своего минимального значения.
+
+\section{Заключение}
+
+В процессе выполнения работы были получены следующие результаты:
+\begin{itemize}
+\item Был разработан метод повышения эффективности обучения, основанный на ансамбле промежуточных решений.
+\item Были проведены вычислительные эксперименты, которые показали возможную применимость данного метода для улучшения качества нейронных сетей, решающих задачу классификации на реальных данных.
+\item В ходе выполнения эксперимента было замечено улучшения качества работы отдельных нейронных сетей.
+\end{itemize}
+
+\end{document}
