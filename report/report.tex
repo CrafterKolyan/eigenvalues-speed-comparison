@@ -120,33 +120,31 @@ $A_{k + 1} = R_k Q_k = Q_k^{-1} Q_k R_k Q_k = Q_k^{-1} A_k Q_k = Q_k^T A_k Q_k$,
 
 \section{Вычислительные эксперименты}
 
-QR алгоритм был реализован тремя различными способами на языке Python 3 при помощи библиотеки Numpy для использования векторизации вычислений, после чего лучшая из имплементаций была ускорена при помощи JIT-компидятора Numba. Результаты приведены в таблице \ref{tabular:results}.
+QR алгоритм был реализован тремя различными способами на языке Python 3 при помощи библиотеки Numpy для использования векторизации вычислений, после чего лучшая из имплементаций была ускорена при помощи JIT-компилятора Numba. Результаты измерений приведены в таблице \ref{tabular:results}.
 
 \begin{center}
 	\pgfplotstabletypeset[
 	after row=\hline,
 	col sep=semicolon,
 	string type,
-	columns/N/.style={column name={\makecell[b]{
-				Номер \\ разбиения
-		}}, column type={|c}},
-	columns/RF/.style={column name={Случайный лес}, column type={|c}},
-	columns/ME/.style={column name={\makecell[b]{
-				Двухслойный \\ случайный лес
-		}}, column type={|c}},
-	columns/LGBM/.style={column name={\makecell[b]{
-				Градиентный \\ бустинг
-		}}, column type={|c}},
-	columns/NN/.style={column name={RF-сеть}, column type={|c|}},
+	columns/index/.style={column name={Имплементация
+		}, column type={|c}},
+	columns/10/.style={column name={$N = 10$}, column type={|c}},
+	columns/20/.style={column name={$N = 20$}, column type={|c}},
+	columns/30/.style={column name={$N = 30$}, column type={|c}},
+	columns/40/.style={column name={$N = 40$}, column type={|c}},
+	columns/50/.style={column name={$N = 50$}, column type={|c|}},
 	every head row/.style={before row=\hline,after row=\hline},
 	every last row/.style={after row=\hline},
-	]{tables/arctica2.csv}
+	]{tables/results.csv}
 	
 	\begin{table}[h!]
-		\caption{ROC-AUC для различных разбиений выборки и различных моделей в эксперименте 1}
+		\caption{Время выполнения QR алгоритма различных имплементаций при различных размерах исходной матрицы в миллисекундах. В таблице приведено среднее время выполнения ± средне квадратичное отклонение времени по 7 запускам алгоритма.}
 		\label{tabular:results}
 	\end{table}
 \end{center}
+
+Все имплементации можно найти по адресу \footnote{\href{https://github.com/CrafterKolyan/eigenvalues-speed-comparison/blob/main/experiments/python/EigenValues.ipynb}{https://github.com/CrafterKolyan/eigenvalues-speed-comparison/blob/main/experiments/python/EigenValues.ipynb}}
 
 \subsection{Анализ полученных результатов}
 
