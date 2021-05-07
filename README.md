@@ -6,7 +6,7 @@
 ## Компиляция C++
 ```
 cd experiments
-g++ -O3 eigenvalues.cpp -o eigenvalues
+g++ -O3 eigenvalues.cpp -std=c++17 -o eigenvalues
 ```
 
 ## Порядок запуска экспериментов
